@@ -1,22 +1,33 @@
--- Rank System with Chat Commands
--- Commands: /rank [username] [rankName]
--- Example: /rank Aces22378 Owner
+--How to use
+--Open Roblox Studio and enter your place.
+--In the Explorer window, navigate to ServerScriptService.
+--Click the "+" button and select Script.
+--Rename the script to "RankSystem".
+
+Lua
+-- Rank System with Permanent Staff List
+-- Commands: /rank @player RankName
 
 local Players = game:GetService("Players")
 
--- 1. EASY TO ADD RANKS: Add name and color here
+-- 1. PERMANENT STAFF LIST (Add UserIDs here)
+-- You can find a UserID in the URL of a profile page
+local STAFF_LIST = {
+	[1] = "Owner", -- Replace with UserID
+	[1] = "Admin", -- Replace with UserID
+}
+
+-- 2. EASY TO ADD/CHANGE RANKS
 local RANK_CONFIG = {
 	["Owner"] = Color3.fromRGB(255, 0, 0),      -- Red
 	["Admin"] = Color3.fromRGB(255, 170, 0),    -- Orange
 	["Dev"] = Color3.fromRGB(0, 255, 255),      -- Cyan
 	["Supporter"] = Color3.fromRGB(0, 255, 0),  -- Green
-	["Player"] = Color3.fromRGB(255, 255, 255)  -- White (Default)
+	["Player"] = Color3.fromRGB(255, 255, 255)  -- White
 }
 
--- Table to store manual ranks assigned during the session
 local manualRanks = {}
 
--- Function to update the tag text and color
 local function updateTag(player, character)
 	local head = character:FindFirstChild("Head")
 	if not head then return end
@@ -36,30 +47,25 @@ local function updateTag(player, character)
 	label.Font = Enum.Font.GothamBold
 	label.Parent = billboard
 	
-	-- Determine the rank
-	local currentRankName = manualRanks[player.UserId] or "Player"
+	-- Priority: 1. Manual Command -> 2. Staff List -> 3. Default Player
+	local currentRankName = manualRanks[player.UserId] or STAFF_LIST[player.UserId] or "Player"
 	local rankColor = RANK_CONFIG[currentRankName] or RANK_CONFIG["Player"]
 	
 	label.Text = "[" .. currentRankName .. "] " .. player.Name
 	label.TextColor3 = rankColor
 end
 
--- 2. CHAT COMMAND LOGIC
+-- 3. CHAT COMMAND LOGIC
 local function onChat(sender, message)
-	-- Only allow the Owner (You) to use the command
-	-- Replace 1234567 with your actual UserId or use name check
-	if sender.Name ~= "Aces22378-Dev" then return end 
+	-- Only the Owner (from the Staff List) can use the command
+	if STAFF_LIST[sender.UserId] ~= "Owner" then return end 
 
 	local args = string.split(message, " ")
 	
 	if args[1] == "/rank" and args[2] and args[3] then
-		local targetName = args[2]
+		local targetName = args[2]:gsub("@", "")
 		local newRank = args[3]
 		
-		-- Clean the @ if the user typed @PlayerName
-		targetName = targetName:gsub("@", "")
-		
-		-- Find the player
 		for _, targetPlayer in pairs(Players:GetPlayers()) do
 			if targetPlayer.Name:lower() == targetName:lower() then
 				if RANK_CONFIG[newRank] then
@@ -67,19 +73,16 @@ local function onChat(sender, message)
 					if targetPlayer.Character then
 						updateTag(targetPlayer, targetPlayer.Character)
 					end
-					print("Rank updated for " .. targetPlayer.Name)
 				end
 			end
 		end
 	end
 end
 
--- Handle joining and respawning
 Players.PlayerAdded:Connect(function(player)
 	player.Chatted:Connect(function(msg) onChat(player, msg) end)
-	
 	player.CharacterAdded:Connect(function(character)
-		task.wait(0.1) -- Small wait to ensure head exists
+		task.wait(0.1)
 		updateTag(player, character)
 	end)
 end)
