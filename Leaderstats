@@ -7,6 +7,8 @@
 --Select Insert Object > Script.
 --Name the script "DataStoreHandler", or whatever it will still work.
 --Paste the following code into the script:
+
+
 local DataStoreService = game:GetService("DataStoreService")
 local myDataStore = DataStoreService:GetDataStore("PlayerWins")
 local Players = game:GetService("Players")
